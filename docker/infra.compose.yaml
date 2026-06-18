@@ -1,0 +1,77 @@
+services:
+  # * Databases and infra
+  rpl_mongodb:
+    container_name: rpl_mongodb
+    image: mongo:8.0
+    profiles:
+      - infra
+      - managers
+      - '' # Empty string allows service to start when no --profile is specified
+    ports:
+      - 27017:27017
+    volumes:
+      - ${LOCAL_WORKSPACE_FOLDER:-../}.madsci/mongodb:/data/db
+  rpl_redis:
+    container_name: rpl_redis
+    image: redis:7.4
+    profiles:
+      - infra
+      - managers
+      - '' # Empty string allows service to start when no --profile is specified
+    ports:
+      - 6379:6379
+    volumes:
+      - ${LOCAL_WORKSPACE_FOLDER:-../}.madsci/redis:/data
+    command: redis-server --appendonly yes --save 900 1 --save 300 10 --save 60 10000
+  rpl_postgres:
+    container_name: rpl_postgres
+    image: postgres:17
+    profiles:
+      - infra
+      - managers
+      - '' # Empty string allows service to start when no --profile is specified
+    environment:
+      - POSTGRES_USER=rpl
+      - POSTGRES_PASSWORD=rpl
+      - POSTGRES_DB=resources
+    ports:
+      - 5432:5432
+    volumes:
+      - ${LOCAL_WORKSPACE_FOLDER:-../}.madsci/postgres:/var/lib/postgresql/data
+  rpl_pgadmin:
+    container_name: rpl_pgadmin
+    image: dpage/pgadmin4
+    profiles:
+      - pgadmin
+    user: root
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=rpl@rpl.com
+      - PGADMIN_DEFAULT_PASSWORD=rpl
+    ports:
+      - 5050:80
+    volumes:
+      - ${LOCAL_WORKSPACE_FOLDER:-../}.madsci/pgadmin:/var/lib/pgadmin
+    depends_on:
+      - rpl_postgres
+  rpl_redis_commander:
+    container_name: rpl_redis_commander
+    image: rediscommander/redis-commander
+    profiles:
+      - redis-commander
+    environment:
+      - REDIS_HOSTS=local:rpl_redis:6379
+    ports:
+      - 8081:8081
+    depends_on:
+      - rpl_redis
+  rpl_uptime:
+    image: louislam/uptime-kuma
+    container_name: rpl_uptime
+    profiles:
+      - infra
+      - '' # Empty string allows service to start when no --profile is specified
+    volumes:
+      - ${LOCAL_WORKSPACE_FOLDER:-../}.madsci/uptime:/app/data
+    ports:
+      - 9991:3001
+    restart: unless-stopped

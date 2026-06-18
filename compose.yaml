@@ -1,0 +1,5 @@
+name: rpl_sdl
+include:
+  - docker/infra.compose.yaml
+  - docker/managers.compose.yaml
+  - docker/nodes.compose.yaml
